@@ -61,12 +61,12 @@ def login(request):
     if request.method == 'POST':
         email = request.POST['email']
         password = request.POST['password']
-
         user = auth.authenticate(email=email, password=password)
 
         if user is not None:
             try:
                 cart = Cart.objects.get(cart_id=_cart_id(request))
+                #print(cart.cart_id)
                 is_cart_item_exists = CartItem.objects.filter(cart=cart).exists()
                 if is_cart_item_exists:
                     cart_item = CartItem.objects.filter(cart=cart)
@@ -78,7 +78,7 @@ def login(request):
                         product_variation.append(list(variation))
 
                     #Get the cart items from the user to access his product variations
-                    cart_item = CartItem.objects.filter(user=user)
+                    cart_item = CartItem.objects.filter(user=user) #problem here
                     ex_var_list = []
                     id = []
                     for item in cart_item:
@@ -95,15 +95,17 @@ def login(request):
                             item.user = user
                             item.save()
                         else:
-                            cart_item = CartItem.objects.get(cart=cart)
+                            cart_item = CartItem.objects.filter(cart=cart)
+                            #print(cart.cart_id)
                             for item in cart_item:
                                 item.user = user
                                 item.save()
             except:
                 pass
-                
+
             auth.login(request, user)
             messages.success(request, 'You are now logged in.')
+            #return redirect('dashboard')
             url = request.META.get('HTTP_REFERER')
             try:
                 query = requests.utils.urlparse(url).query
@@ -114,6 +116,7 @@ def login(request):
                     return redirect(nextPage)
             except:
                 return redirect('dashboard')
+
         else:
             messages.error(request, 'Invalid login credentials.')
             return redirect('login')
